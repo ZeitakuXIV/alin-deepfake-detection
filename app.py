@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 # 1. KONFIGURASI HALAMAN (DESIGN)
 # ==========================================
 st.set_page_config(
-    page_title="SpectralDetector",
+    page_title="Deepfake Face Image Detector",
     page_icon="�️",
     layout="wide",
     initial_sidebar_state="expanded"

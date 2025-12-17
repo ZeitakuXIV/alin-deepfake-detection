@@ -19,7 +19,6 @@ venv/
 images/
 
 # Models & Large Files
-*.pkl
 *.h5
 *.pt
 *.pth

@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+*.egg-info/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VS Code
+.vscode/
+
+# Dataset
+images/
+
+# Models & Large Files
+*.pkl
+*.h5
+*.pt
+*.pth
+
+# Streamlit
+.streamlit/secrets.toml
+
+# OS Generated
+.DS_Store
+Thumbs.db

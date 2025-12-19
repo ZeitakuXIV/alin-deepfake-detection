@@ -40,7 +40,7 @@ st.markdown("""
 # ==========================================
 
 # Konfigurasi Global
-FIXED_SIZE = (512, 512)  # Ukuran standar resize
+FIXED_SIZE = (512, 512)  # Semua gambar disamakan ukurannya biar hasil perhitungan konsisten
 
 def azimuthalAverage(image, center=None):
     """
@@ -51,14 +51,14 @@ def azimuthalAverage(image, center=None):
     if not center:
         center = np.array([x//2, y//2])
     
-    # Bikin grid koordinat (x,y)
+    # Siapkan koordinat (x,y) untuk menghitung jarak tiap piksel dari pusat
     xx, yy = np.meshgrid(np.arange(x), np.arange(y))
     
-    # Hitung jarak setiap pixel dari pusat (Euclidean Distance)
+    # Hitung jarak tiap piksel dari pusat, lalu dikelompokkan per jarak (seperti cincin)
     r = np.sqrt((xx - center[0])**2 + (yy - center[1])**2)
     r = r.astype(int)
 
-    # Jumlahkan energi per cincin jari-jari (Binning)
+    # Ringkas nilai-nilai per cincin supaya matriks 2D jadi satu garis (vektor 1D)
     tbin = np.bincount(r.ravel(), image.ravel())
     nr = np.bincount(r.ravel())
     
@@ -79,20 +79,19 @@ def extract_features(image_array):
         img = image_array
         if img is None: 
             return None
-        img = cv2.resize(img, FIXED_SIZE)  # Resize ke ukuran standar
+        img = cv2.resize(img, FIXED_SIZE)  # Samakan ukuran gambar
 
-        # FFT
+        # FFT: mengubah gambar jadi "pola gelombang" (informasi frekuensi)
         f = np.fft.fft2(img)
         fshift = np.fft.fftshift(f)
         
-        # KEMBALI KE LOG MAGNITUDE (Ini yang terbukti bekerja)
-        # Logaritma menyelamatkan data frekuensi tinggi dari angka nol
+        # Log-magnitude: bikin nilai spektrum lebih mudah dibaca (dan aman dari log(0))
         magnitude_spectrum = 20 * np.log(np.abs(fshift) + 1e-10)
 
-        # Azimuthal Integration
+        # Ringkas spektrum 2D jadi vektor 1D (rata-rata dari pusat ke pinggir)
         psd1D = azimuthalAverage(magnitude_spectrum)
         
-        # Ambil data tanpa titik 0 (DC component yang nilainya raksasa itu)
+        # Buang nilai paling pusat (biasanya sangat besar) supaya tidak "menutupi" pola lainnya
         return psd1D[1:] 
     
     except Exception as e:
@@ -103,6 +102,7 @@ def extract_features(image_array):
 # ==========================================
 @st.cache_resource
 def load_model():
+    # Cache: model tidak dibaca ulang setiap kali Streamlit refresh
     try:
         with open('model_svm_best.pkl', 'rb') as file:
             model = pickle.load(file)
@@ -112,7 +112,7 @@ def load_model():
 
 @st.cache_resource
 def load_scaler():
-    """Load scaler if exists (optional - only if model was trained with scaling)"""
+    """Load scaler jika ada (opsional, tergantung cara training model)."""
     try:
         with open('scaler.pkl', 'rb') as file:
             scaler = pickle.load(file)
@@ -120,6 +120,7 @@ def load_scaler():
     except FileNotFoundError:
         return None
 
+# Load sekali: kalau file tidak ada, variabelnya jadi None
 model = load_model()
 scaler = load_scaler()
 
@@ -195,7 +196,7 @@ st.write("---")
 uploaded_file = st.file_uploader("Upload Image (JPG/PNG)", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # Buka gambar dengan PIL lalu convert ke Grayscale (L) -> Array
+    # Ubah ke grayscale supaya perhitungan lebih sederhana dan konsisten
     image_pil = Image.open(uploaded_file).convert('L')
     img_array = np.array(image_pil)
     
@@ -221,19 +222,19 @@ if uploaded_file is not None:
                         st.error("❌ Gagal mengekstrak fitur dari gambar!")
                         st.stop()
                     
-                    # Reshape karena SVM butuh input 2D array [[f1, f2, ...]]
+                    # Bentuk data sesuai format input model
                     input_data = features.reshape(1, -1)
                     
-                    # Apply scaler jika ada (jika model ditraining dengan scaling)
+                    # Scaling (opsional): samakan skala seperti saat training
                     if scaler is not None:
                         input_data = scaler.transform(input_data)
                         st.caption("⚙️ StandardScaler applied (model trained with scaling)")
                     
-                    # Prediksi
+                    # Model menentukan kelas (REAL/FAKE) + tingkat keyakinan
                     prediction = model.predict(input_data)
                     probabilities = model.predict_proba(input_data)
                     
-                    # Ambil confidence score tertinggi
+                    # Ambil persentase keyakinan tertinggi
                     confidence = np.max(probabilities) * 100
                     class_label = "REAL (ASLI)" if prediction[0] == 1 else "FAKE (AI/GAN)"
                     

@@ -173,6 +173,13 @@ with st.sidebar:
         * ✅ **REAL (Asli):** Grafik melandai secara alami. Di ujung kanan (frekuensi tinggi), **masih terdapat nilai energi** yang stabil (karena kamera asli menangkap tekstur/noise alami).
         * 🚨 **FAKE (Palsu):** Grafik **menurun lebih curam/tajam**. Di ujung kanan, nilainya **lebih rendah** dibandingkan citra asli (karena efek *smoothing* dari AI menghilangkan detail mikro).
         """)
+    
+    with st.expander("Sumber Foto Wajah"):
+        st.markdown("""
+        - [FFHQ Dataset Github](https://github.com/NVlabs/ffhq-dataset?tab=readme-ov-file)
+        - [FFHQ Dataset GDrive](https://drive.google.com/drive/folders/1u2xu7bSrWxrbUxk-dT-UvEJq8IjdmNTP)
+        - [This Person Does Not Exist](https://thispersondoesnotexist.com/)
+        """)
 
     st.write("---")
     st.write("### Cara Kerja:")
@@ -233,7 +240,6 @@ if uploaded_file is not None:
                     # --- TAMPILKAN HASIL ---
                     st.write("---")
                     
-                    # Logic warna: Hijau kalau Real, Merah kalau Fake
                     if prediction[0] == 1:
                         st.success(f"**HASIL DETEKSI: {class_label}**")
                         st.metric("Confidence Score", f"{confidence:.2f}%")
@@ -243,13 +249,9 @@ if uploaded_file is not None:
                         st.metric("Confidence Score", f"{confidence:.2f}%")
                         st.caption("Analisis: Terdeteksi penurunan drastis pada frekuensi tinggi (ciri khas upsampling GAN).")
 
-                    # --- VISUALISASI GRAFIK ALIN (YANG PENTING BUAT LAPORAN) ---
                     st.write("### Visualisasi Vektor Spektrum")
-                    st.write("Grafik ini adalah representasi vektor 1D dari citra setelah transformasi basis:")
-                    
-                    # Plot pakai Streamlit native chart biar interaktif
+                    st.write("Grafik ini adalah representasi vektor 1D dari citra setelah transformasi basis:")                    
                     st.line_chart(features)
-                    
                     st.info("Sumbu X: Frekuensi (Rendah ke Tinggi) | Sumbu Y: Log Magnitude (Energi)")
 
 else:
